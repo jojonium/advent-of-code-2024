@@ -1,7 +1,7 @@
 name:                aoc2024
 version:             0.1.0.0
 github:              "jojonium/aoc2024"
-license:             GPLv3
+license:             GPL-3
 author:              "Joseph Petitti"
 maintainer:          "joseph@petitti.org"
 copyright:           "2024 Joseph Petitti"
@@ -22,8 +22,6 @@ dependencies:
 - base >= 4.7 && < 5
 - split
 - containers
-- mtl
-- search-algorithms
 
 ghc-options:
 - -Wall
