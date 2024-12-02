@@ -6,5 +6,5 @@ main :: IO ()
 main = do
   [left, right] <- map sort . transpose . map (map read . words) . lines <$> getContents
   putStrLn $ "Part 1: " ++ show (sum . map abs $ zipWith subtract left right)
-  putStrLn $ "Part 2: " ++ show (sum $ map (\l -> l * (length . filter (== l)) right) left)
+  putStrLn $ "Part 2: " ++ show (sum [l * (length . filter (==l)) right | l <- left])
 
