@@ -1,30 +1,32 @@
 module Day03 (main) where
 
-import Text.Regex.TDFA
 import Data.List (isPrefixOf)
+import Data.Char (isDigit)
 
 main :: IO ()
 main = do
   input <- getContents
-  let regex = "mul\\(([0-9]{1,3}),([0-9]{1,3})\\)"
-  putStrLn $ "Part 1: " ++ show (part1 input regex)
-  putStrLn $ "Part 2: " ++ show (part2 input ("\\`" ++ regex) True)
+  putStrLn $ "Part 1: " ++ show (solve input True True)
+  putStrLn $ "Part 2: " ++ show (solve input False True)
 
 
-part1 :: String -> String -> Int
-part1 s regex = case s =~ regex :: (String, String, String, [String]) of
-  (_, _, next, [a, b]) -> read a * read b + part1 next regex
-  _                    -> 0
-
-
-part2 :: String -> String -> Bool -> Int
-part2 "" _ _ = 0
-part2 s regex enabled
-  | "do()"    `isPrefixOf` s = part2 (drop 4 s) regex True
-  | "don't()" `isPrefixOf` s = part2 (drop 7 s) regex False
-  | s =~ regex = let (x, s') = case (enabled, s =~ regex :: (String, String, String, [String])) of
-                                 (True, (_, _, next, [a, b])) -> (read a * read b, next) 
-                                 (_, (_, _, next, _))         -> (0, next)
-                 in x + part2 s' regex enabled
-  | otherwise = part2 (drop 1 s) regex enabled
+-- input, isPart1, isEnabled
+-- regex would be easier to write, but very slow
+solve :: String -> Bool -> Bool -> Int
+solve "" _ _ = 0
+solve s p1 enabled
+  | "do()" `isPrefixOf` s = solve (drop 4 s) p1 True
+  | not enabled = solve (drop 1 s) p1 enabled
+  | "don't()" `isPrefixOf` s && not p1 = solve (drop 7 s) p1 False
+  | "mul(" `isPrefixOf` s =
+    let s1 = drop 4 s
+        a  = takeWhile isDigit s1
+        s2 = dropWhile isDigit s1
+        b  = takeWhile isDigit (drop 1 s2)
+        s3 = dropWhile isDigit (drop 1 s2)
+    in if not (null a) && length a < 4 && head s2 == ',' &&
+          not (null b) && length b < 4 && head s3 == ')'
+       then read a * read b + solve (drop 1 s3) p1 enabled
+       else solve (drop 1 s) p1 enabled
+  | otherwise = solve (drop 1 s) p1 enabled
 
