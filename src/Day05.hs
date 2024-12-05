@@ -4,39 +4,38 @@ import Data.List.Split (splitOn)
 import Data.Char (isDigit)
 import Data.List (sortBy)
 import Data.Maybe (mapMaybe)
+import qualified Data.Map as M
 
 type Page   = String
-type Rule   = (Page, Page)
-type Update = [String]
+type Rules  = M.Map (Page, Page) Ordering
+type Update = [Page]
 
 
 main :: IO ()
 main = do
   [r, u] <- map lines . splitOn "\n\n" <$> getContents
-  let rules   = map (\s -> (takeWhile isDigit s, drop 1 (dropWhile isDigit s))) r
+  let rules   = foldr addToRules M.empty r
       updates = map (splitOn ",") u
-  putStrLn $ "Part 1: " ++ show ((sum . mapMaybe (part1 rules)) updates)
-  putStrLn $ "Part 1: " ++ show ((sum . mapMaybe (part2 rules)) updates)
+  putStrLn $ "Part 1: " ++ show ((sum . mapMaybe (solve rules True )) updates)
+  putStrLn $ "Part 2: " ++ show ((sum . mapMaybe (solve rules False)) updates)
 
 
-comparingRules :: [Rule] -> Page -> Page -> Ordering
-comparingRules [] _ _ = EQ  -- no rule applies to these two pages
-comparingRules ((a, b):rs) x y
-  | a == x && b == y = LT
-  | a == y && b == x = GT
-  | otherwise = comparingRules rs x y
+-- inserts forward and backward comparisons for a single rule like "47|53"
+addToRules :: String -> Rules -> Rules
+addToRules s m = M.insert (a, b) LT (M.insert (b, a) GT m)
+  where a = takeWhile isDigit s
+        b = drop 1 (dropWhile isDigit s)
 
 
--- returns Just middle page if this update is sorted correctly, Nothing otherwise
-part1 :: [Rule] -> Update -> Maybe Int
-part1 rs ps
-  | sortBy (comparingRules rs) ps == ps = Just $ read (ps !! (length ps `div` 2))
+comparingRules :: Rules -> Page -> Page -> Ordering
+comparingRules rs x y = M.findWithDefault EQ (x, y) rs
+
+
+-- returns middle pages for sorted updates if True, unsorted if False
+solve :: Rules -> Bool -> Update -> Maybe Int
+solve rs p1 ps
+  | sorted `f` ps = Just $ read (sorted !! (length sorted `div` 2))
   | otherwise = Nothing
+  where f = if p1 then (==) else (/=)
+        sorted = sortBy (comparingRules rs) ps
 
-
--- sorts and returns Just middle page if this update is NOT sorted correctly
-part2 :: [Rule] -> Update -> Maybe Int
-part2 rs ps
-  | sorted /= ps = Just $ read (sorted !! (length sorted `div` 2))
-  | otherwise = Nothing
-  where sorted = sortBy (comparingRules rs) ps
