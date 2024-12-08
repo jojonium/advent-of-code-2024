@@ -10,16 +10,14 @@ type Chart = M.Map Char [Coord]
 
 main :: IO ()
 main = do
-  input <- lines <$> getContents
-  let h = length input
-      w = length (head input)
-  putStrLn $ "Part 1: " ++ show (solve True  w h (parse input))
-  putStrLn $ "Part 2: " ++ show (solve False w h (parse input))
+  (w, h, chart) <- parse . lines <$> getContents
+  putStrLn $ "Part 1: " ++ show (solve True  w h chart)
+  putStrLn $ "Part 2: " ++ show (solve False w h chart)
 
 
 -- create a map of each frequency to the coordinates of all antennas of that frequency
-parse :: [String] -> Chart
-parse ls = foldr outer M.empty (zip ls [0..])
+parse :: [String] -> (Int, Int, Chart)
+parse ls = (length ls, length (head ls), foldr outer M.empty (zip ls [0..]))
   where outer (l, j) m = foldr (inner j) m (zip l [0..])
         inner j (c, i) m = if c /= '.' then M.insertWith (++) c [(i, j)] m else m
 
@@ -29,7 +27,7 @@ antinodes _ _ _ _ _ [] = []
 antinodes p1 w h c (x, y) ((i, j):as)
   | x == i && y == j = antinodes p1 w h c (x, y) as  -- can't make an antinode with yourself
   | otherwise = myANs ++ antinodes p1 w h c (x, y) as
-    where -- all points on the line between (x, y) and (i, j)
+    where -- all points on the line intersecting (x, y) and (i, j)
           onLine = zip (if i < x then [x, x + x - i .. w - 1] else [x, x + x - i .. 0])
                        (if j < y then [y, y + y - j .. h - 1] else [y, y + y - j .. 0])
           -- in Part 1 we only want the first antinode beyond this antenna
